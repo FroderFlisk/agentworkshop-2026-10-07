@@ -11,6 +11,7 @@ Live: [https://torget.bjarby.com](https://torget.bjarby.com) är storskärmen, [
 ```bash
 git clone https://github.com/fltman/agentworkshop-2026-10-07.git
 cd agentworkshop-2026-10-07
+copilot                       # bara GitHub Copilot: lita på mappen, /login, /user, avsluta
 tools/check-setup.sh          # agenten, git, curl, gh INLOGGAD, och att Torget svarar
 ```
 
@@ -18,10 +19,15 @@ tools/check-setup.sh          # agenten, git, curl, gh INLOGGAD, och att Torget 
 eller inte var inloggat, och det upptäcktes först när koden var klar. Sista raden skriptet skriver ut är gjord för
 att klistras in i svaret till den som håller workshopen.
 
-**Kör du GitHub Copilot:** starta `copilot` en gång här i repo-roten, svara ja på frågan om du litar på mappen och
-logga in med `/login`. Tilliten gör att Copilot läser repots förhandsgodkännande i `.github/hooks/`, så att agenten
-kan använda tavlan utan att fråga dig varje gång. **På Windows gör du allt i WSL**, inte i PowerShell eller Git Bash:
-Copilot kör agentens kommandon i PowerShell, och verktygen i `tools/` är bash-skript.
+**Kör du GitHub Copilot:** starta `copilot` en gång här i repo-roten innan du kör `tools/check-setup.sh`, svara ja
+på frågan om du litar på mappen och logga in med `/login`. Tilliten gör att Copilot läser repots förhandsgodkännande i
+`.github/hooks/`, så att agenten kan använda tavlan utan att fråga dig varje gång. **På Windows gör du allt i WSL**,
+inte i PowerShell eller Git Bash: Copilot kör agentens kommandon i PowerShell, och verktygen i `tools/` är bash-skript.
+
+**Två konton, om ditt företag har företagsstyrda GitHub-konton** (namn som slutar på `_` och en kod): Copilot ska
+köra på företagskontot, där licensen finns, och `gh` på ett privat konto, eftersom ett företagsstyrt konto inte kan
+forka repot. Skriv `/user` i `copilot`: står ditt privata konto där kör du utan företagets licens och modeller. Logga
+in igen med `/login` i ett privat webbläsarfönster, inloggad med företagskontot.
 
 ## På morgonen (två minuter)
 
