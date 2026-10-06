@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "type": "command",
+        "bash": "r=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; f=\"$r/tools/copilot-godkann.sh\"; [ -f \"$f\" ] && bash \"$f\"; exit 0",
+        "timeoutSec": 10
+      }
+    ]
+  }
+}

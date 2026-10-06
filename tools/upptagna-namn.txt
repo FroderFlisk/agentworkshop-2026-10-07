@@ -1,0 +1,30 @@
+# Teamnamn som inte går att välja. Ett namn per rad, gemener. Rader som börjar med # är kommentarer.
+# Läses av tools/new-team.sh, tools/pr.sh och tools/check-setup.sh, så att alla tre säger samma sak.
+#
+# Varför listan finns: förra gången stod ett riktigt, ledigt namn som exempel i dokumentationen.
+# Flera team tog det, och tavlan handlade om vem som var vem från 09:43 till 10:32. Ett namn som
+# står tryckt någonstans är ett namn flera skriver av. Därför är varje sådant namn upptaget här.
+#
+# Lägger du ett nytt exempelnamn i en text: lägg in det här i samma commit.
+
+# exempelkvarteret i mallen
+exempelkvarteret
+exempel
+exempelteam
+
+# platshållare och namn ur dokumentationen
+ditt-teamnamn
+ett-eget-namn
+eget-namn
+team
+teamet
+namn
+kvarter
+test
+demo
+prov
+provteam
+
+# namn som var exempel förra gången och därför redan är förvirrande
+lyktan
+bryggan

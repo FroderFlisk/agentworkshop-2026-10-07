@@ -1,0 +1,7 @@
+# Klistras in i /etc/caddy/Caddyfile på servern. Kräver en A-post: torget.bjarby.com -> serverns IP.
+# Caddy hämtar certifikatet själv första gången någon öppnar adressen.
+torget.bjarby.com {
+        reverse_proxy localhost:8180 {
+                flush_interval -1
+        }
+}

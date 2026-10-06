@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Staden</title>
+<style>
+  :root { --bg:#0b0d10; --panel:#12151a; --line:#1f242c; --fg:#e6e8eb; --dim:#7d8590; --accent:#ffb454; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.45 ui-monospace, Menlo, monospace; min-height:100vh; }
+  header { display:flex; align-items:center; gap:16px; padding:0 16px; height:48px; border-bottom:1px solid var(--line); position:sticky; top:0; background:var(--bg); z-index:3; }
+  header h1 { font-size:16px; margin:0; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); }
+  header a { color:var(--dim); text-decoration:none; font-size:13px; } header a:hover { color:var(--fg); }
+  header .n { margin-left:auto; color:var(--dim); font-size:12px; }
+
+  /* Rutorna växer med sitt innehåll mellan MIN och MAX i stället för att kapa det. */
+  main { display:grid; grid-template-columns: repeat(auto-fill, minmax(min(420px, 100%), 1fr)); gap:16px; padding:16px; align-items:start; }
+  .k { background:var(--panel); border:1px solid var(--line); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; animation: in .4s ease-out; }
+  @keyframes in { from { opacity:0; transform:scale(.97);} to { opacity:1; transform:none;} }
+  /* Rubrikraden: namnet ligger ovanför rutan, inte ovanpå den. Hörnen är kvarterets egna. */
+  .k .bar { display:flex; align-items:center; gap:10px; padding:7px 12px; border-bottom:1px solid var(--line); font-size:12px; color:var(--dim); flex:none; }
+  .k .bar b { color:var(--fg); font-weight:600; letter-spacing:.04em; }
+  .k .bar .sp { margin-left:auto; }
+  .k .bar a, .k .bar button { color:var(--dim); background:none; border:0; font:inherit; cursor:pointer; text-decoration:none; padding:2px 6px; border-radius:5px; }
+  .k .bar a:hover, .k .bar button:hover { color:var(--fg); background:#1b2027; }
+  .k iframe { width:100%; height:340px; border:0; background:var(--bg); display:block; }
+  /* helskärm för demon */
+  .k.stor { position:fixed; inset:48px 0 0 0; z-index:5; border-radius:0; border:0; }
+  .k.stor iframe { height:100% !important; flex:1; }
+  .tom { color:var(--dim); padding:48px 16px; text-align:center; grid-column:1/-1; }
+  @media (min-width: 1700px) { main { grid-template-columns: repeat(3, 1fr); } }
+</style>
+</head>
+<body>
+<header><h1>Staden</h1><a href="/">Torget</a><a href="/workshop">workshop</a><span class="n" id="n"></span></header>
+<main id="m"></main>
+<script>
+// Storskärmens visningsyta: ett kvarter per team, som de ligger i public/staden/kvarter/.
+// Sidan vet ingenting om vad gruppen bestämt sig för att bygga. Vill du ha en pulsremsa, en
+// poängremsa eller linjer mellan rutor som reagerar på varandra: det ligger som recept i
+// workshopladans dagen/recept/, med flit, så nästa grupps agenter får bestämma själva.
+const seen = new Map();           // filnamn -> kortet
+const MIN = 340, MAX = 720;       // rutans höjd följer innehållet mellan de här gränserna
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const namn = k => k.replace(/\.html$|\/$/, '');
+
+function kort(k) {
+  const t = namn(k), url = '/staden/kvarter/' + encodeURIComponent(t) + (k.endsWith('/') ? '/' : '.html');
+  const d = document.createElement('section'); d.className = 'k'; d.dataset.team = t;
+  // allow-forms: utan den sväljs submit i kvarterens egna formulär, och teamen bygger om sina
+  // knappar i onödan. Det kostade en förmiddag förra gången.
+  d.innerHTML = '<div class="bar"><b>' + esc(t) + '</b><span class="sp"></span>'
+    + '<a href="/t/' + encodeURIComponent(t) + '/" target="_blank" title="kvarterets backend">/t/' + esc(t) + '</a>'
+    + '<a href="' + url + '" target="_blank" title="öppna i egen flik">↗</a>'
+    + '<button title="helskärm (Esc stänger)">⤢</button></div>'
+    + '<iframe src="' + url + '" sandbox="allow-scripts allow-same-origin allow-forms" loading="lazy"></iframe>';
+  d.querySelector('button').onclick = () => stor(d);
+  return d;
+}
+function stor(d) {
+  const pa = !d.classList.contains('stor');
+  document.querySelectorAll('.k.stor').forEach(x => x.classList.remove('stor'));
+  d.classList.toggle('stor', pa); document.body.style.overflow = pa ? 'hidden' : '';
+}
+addEventListener('keydown', e => { if (e.key === 'Escape') { document.querySelectorAll('.k.stor').forEach(x => x.classList.remove('stor')); document.body.style.overflow = ''; } });
+
+// Låt rutan växa med innehållet. Samma origin, så vi får läsa iframens höjd.
+// Tips till teamen: lås inte body till height:100vh med overflow:hidden. Då rapporterar den bara
+// rutans egen höjd, och kvarteret blir aldrig högre än MIN.
+function passa() {
+  for (const d of seen.values()) {
+    if (d.classList.contains('stor')) continue;
+    const f = d.querySelector('iframe');
+    try {
+      const doc = f.contentDocument; if (!doc || !doc.body) continue;
+      let h = Math.max(doc.documentElement.scrollHeight, doc.body.scrollHeight);
+      for (const el of doc.querySelectorAll('*')) if (el.scrollHeight > el.clientHeight + 4 && el.clientHeight > 40) h = Math.max(h, f.clientHeight + (el.scrollHeight - el.clientHeight));
+      const mal = Math.max(MIN, Math.min(MAX, Math.ceil(h)));
+      if (Math.abs(mal - f.clientHeight) > 6) f.style.height = mal + 'px';
+    } catch {}
+  }
+}
+setInterval(passa, 1500);
+
+async function load() {
+  const list = await fetch('/api/kvarter').then(r => r.json()).catch(() => []);
+  const m = document.getElementById('m');
+  list.sort((a, b) => a.localeCompare(b, 'sv'));
+  for (const k of list) { if (seen.has(k)) continue; const d = kort(k); seen.set(k, d); m.appendChild(d); }
+  document.getElementById('n').textContent = list.length + ' kvarter';
+  if (!list.length) m.innerHTML = '<div class="tom">Inga kvarter ännu. Första PR:en som mergas dyker upp här.</div>';
+}
+load(); setInterval(load, 20000);
+
+// Efter en deploy har kvarteren ny kod, men iframarna sitter kvar med den gamla. Servern byter
+// startad vid varje omstart: då laddar sidan om sig, så storskärmen aldrig visar en gammal stad.
+let startad;
+setInterval(async () => {
+  const h = await fetch('/api/health').then(r => r.json()).catch(() => null);
+  if (!h || !h.startad) return;
+  if (startad && h.startad !== startad && !document.querySelector('.k.stor')) location.reload();
+  startad = startad || h.startad;
+}, 15000);
+</script>
+</body>
+</html>

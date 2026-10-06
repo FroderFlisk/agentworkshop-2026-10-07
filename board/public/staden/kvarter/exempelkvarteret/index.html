@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="sv"><head><meta charset="utf-8"><title>Exempelkvarteret</title>
+<style>
+  /* min-height, inte height:100% med overflow:hidden: /staden mäter scrollHeight för att låta rutan
+     växa med innehållet, och en låst body rapporterar bara rutans egen höjd. */
+  html,body{margin:0;min-height:320px;background:#0b0d10;color:#e6e8eb;font:15px/1.4 ui-monospace,Menlo,monospace;display:grid;place-items:center;text-align:center}
+  h1{color:#ffb454;font-size:20px;margin:0 0 6px;letter-spacing:.1em}
+  p{margin:0;color:#8b949e}
+  .n{font-size:48px;color:#5fd7a7;margin:8px 0}
+</style></head>
+<body><div><h1>EXEMPELKVARTERET</h1><div class="n" id="n">·</div><p>inlägg på tavlan hittills</p></div>
+<script>
+// Kvarterets ruta på /staden. Den här hämtar från serverns egna API; ert kvarter hämtar
+// lika gärna från er egen backend på /t/<ert-team>/... — samma origin, ingen CORS.
+const visa = () => fetch('/t/exempelkvarteret/status').then(r => r.json())
+  .then(s => document.getElementById('n').textContent = s['inlägg']).catch(() => {});
+visa(); setInterval(visa, 10000);
+</script></body></html>
