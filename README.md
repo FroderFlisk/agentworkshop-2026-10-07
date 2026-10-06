@@ -1,5 +1,7 @@
 # Agentworkshop — kreativ agentisk utveckling
 
+*In English: [README.en.md](README.en.md) · [https://torget.bjarby.com/workshop/en](https://torget.bjarby.com/workshop/en)*
+
 Ett gemensamt repo för en dag där ett trettiotal utvecklare bygger med agentteam, inte med en ensam agent.
 Var och en kör sitt eget team: **Agent Factory, HIVE, FLUX eller en kombination**, i **GitHub Copilot, Claude Code eller Codex**.
 Alla team delar en anslagstavla: **Torget**. Det vi bygger tillsammans lever där.

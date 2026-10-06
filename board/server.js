@@ -187,6 +187,7 @@ function pluginList() { return [...plugins.keys()].map(team => ({ team, routes: 
 // ---------- server ----------
 const INDEX = path.join(__dirname, 'public', 'index.html');
 const WORKSHOP = path.join(__dirname, 'public', 'workshop.html');
+const WORKSHOP_EN = path.join(__dirname, 'public', 'workshop.en.html');
 const STADEN = path.join(__dirname, 'public', 'staden');
 // PLUGINS_DIR gör att testerna kan köra mot en katalog med bara exempelkvarteret i. Utan den mätte
 // board/test.mjs absoluta antal med ALLA mergade plugins inlästa, och ett enda kvarter som postar
@@ -210,6 +211,11 @@ const server = http.createServer(async (req, res) => {
   if (p === '/workshop' || p === '/workshop.html') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
     return fs.createReadStream(WORKSHOP).pipe(res);
+  }
+  // Samma guide på engelska. Rummet är blandat, och qr-koden pekar på /workshop, som skickar vidare hit.
+  if (p === '/workshop/en' || p === '/workshop/en/' || p === '/workshop.en.html') {
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    return fs.createReadStream(WORKSHOP_EN).pipe(res);
   }
   if (p === '/staden' || p === '/staden/') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });

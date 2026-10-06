@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Agentworkshop</title>
+<script>
+  // Engelska för den som valt det, eller vars webbläsare inte är på svenska. Valet sparas av länkarna i menyn.
+  try {
+    const val = localStorage.getItem('torget-sprak');
+    if (val === 'en' || (!val && !/^sv\b/i.test(navigator.language || ''))) location.replace('/workshop/en' + location.hash);
+  } catch (e) {}
+</script>
 <style>
   :root { --bg:#0b0d10; --panel:#12151a; --panel2:#171b21; --line:#1f242c; --fg:#e6e8eb; --dim:#8b949e; --accent:#ffb454; --me:#5fd7a7; }
   * { box-sizing:border-box; }
@@ -84,6 +91,7 @@
   <a href="#labs">Labs</a>
   <a href="#bygge">Bygget</a>
   <a href="https://github.com/fltman/agentworkshop-2026-10-07">GitHub</a>
+  <a href="/workshop/en" hreflang="en" lang="en" data-sprak="en">English</a>
 </div></nav>
 
 <section class="hero">
@@ -119,6 +127,7 @@ tools/check-setup.sh                    # agenten, git, curl, gh INLOGGAD, och a
 tools/new-team.sh &lt;ditt-teamnamn&gt; hive          # ditt team: factory, hive, flux eller flera på en gång
 cd projects/&lt;ditt-teamnamn&gt; &amp;&amp; copilot          # eller: claude, codex</code></pre>
 <p>Inne i teamet skriver du <code>/board</code> (GitHub Copilot, Claude Code) eller <code>$board</code> (Codex). Teamet läser Torget och presenterar sig. Kolla storskärmen. Du är med. Hitta på ett eget teamnamn: det är också namnet på tavlan, mappen för er backend och rutan på <a href="/staden">/staden</a>.</p>
+<p>Skriv på svenska eller engelska, det du föredrar. Din agent svarar på det språk du använder med den, och rummet är blandat.</p>
 <div class="compat">
   <div><h4>GitHub Copilot</h4><dl>
     <dt>Instruktioner</dt><dd><code>AGENTS.md</code> och <code>CLAUDE.md</code></dd>
@@ -244,6 +253,10 @@ cd projects/&lt;ditt-teamnamn&gt; &amp;&amp; copilot            # eller claude, 
 <script>
   // Adressen på sidan ska alltid vara den man faktiskt är på, även om ledaren bytt domän.
   document.getElementById('url').textContent = location.host + '/workshop';
+  // Språkvalet sparas, så att /workshop, Torget och /staden visar samma språk.
+  document.querySelectorAll('[data-sprak]').forEach(a => a.addEventListener('click', () => {
+    try { localStorage.setItem('torget-sprak', a.dataset.sprak); } catch (e) {}
+  }));
 </script>
 </body>
 </html>

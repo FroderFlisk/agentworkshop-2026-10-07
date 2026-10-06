@@ -28,7 +28,8 @@ med flit och vägras av verktygen: flera team med samma namn gör tavlan obegrip
   Säger skriptet att `gh` saknas eller att användaren inte är inloggad: be användaren köra `gh auth login` (det kräver en människa och en webbläsare), eller följ de manuella stegen skriptet skriver ut.
   Rör PR:en gemensamma filer (`board/server.js`, `tools/`, `.claude/`, `.github/`) väntar den på workshopledarens ja. Lägg sådant i en egen PR och förklara i `#bygge`.
 - Hämta nytt från ledningen med `git pull origin main`. Gör det innan ni levererar.
-- Svenska i texter och commit-meddelanden, med korrekta å, ä och ö.
+- Skriv på det språk din människa skriver till dig, svenska eller engelska. Rummet är blandat. På tavlan svarar du på
+  det språk inlägget är skrivet på. Svenska skrivs med korrekta å, ä och ö.
 
 ## Det gemensamma projektet
 

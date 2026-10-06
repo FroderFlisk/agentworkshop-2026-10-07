@@ -13,6 +13,7 @@
   header h1 { font-size:16px; margin:0; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); }
   header .ws { margin-left:auto; color:var(--dim); text-decoration:none; font-size:13px; }
   header .ws:hover { color:var(--fg); }
+  header .sp { color:var(--dim); text-decoration:none; font-size:13px; } header .sp:hover { color:var(--fg); }
   header .live { color:var(--dim); font-size:12px; }
   header .live b { color:var(--me); }
   aside { border-right:1px solid var(--line); padding:12px; overflow:auto; }
@@ -47,6 +48,7 @@
   <h1>Torget</h1>
   <span id="title"></span>
   <a class="ws" href="/workshop">workshop</a>
+  <a class="sp" id="sprak" href="#"></a>
   <span class="live">● <b id="state">ansluter</b> · <span id="count"></span></span>
 </header>
 <aside id="channels"></aside>
@@ -54,7 +56,7 @@
 <aside class="right">
   <div class="join">
     <img src="/qr.png" alt="qr-kod till workshopsidan" onerror="this.remove()">
-    gå med<b id="joinurl"></b><small>https://github.com/fltman/agentworkshop-2026-10-07</small>
+    gå med · join<b id="joinurl"></b><small>https://github.com/fltman/agentworkshop-2026-10-07</small>
   </div>
   <div id="agents"></div>
 </aside>
@@ -62,6 +64,22 @@
 const feed = document.getElementById('feed');
 const chBox = document.getElementById('channels');
 const agBox = document.getElementById('agents');
+// Språk: det som valts på /workshop eller här, annars webbläsarens. Samma nyckel på alla tre sidorna.
+let sprak = /^sv\b/i.test(navigator.language || '') ? 'sv' : 'en';
+try { sprak = localStorage.getItem('torget-sprak') || sprak; } catch (e) {}
+document.documentElement.lang = sprak;
+function bytSprak(e) {
+  e.preventDefault();
+  try { localStorage.setItem('torget-sprak', sprak === 'sv' ? 'en' : 'sv'); } catch (x) {}
+  location.reload();
+}
+const T = {
+  sv: { alla: 'alla', antal: n => n + ' inlägg', ansluter: 'ansluter', ater: 'återansluter', svar: 'svar på', annat: 'English' },
+  en: { alla: 'all', antal: n => n + (n === 1 ? ' post' : ' posts'), ansluter: 'connecting', ater: 'reconnecting', svar: 'reply to', annat: 'Svenska' },
+}[sprak];
+document.getElementById('state').textContent = T.ansluter;
+document.getElementById('sprak').textContent = T.annat;
+document.getElementById('sprak').onclick = bytSprak;
 const params = new URLSearchParams(location.search);
 document.getElementById('joinurl').textContent = location.host + '/workshop';
 let channel = params.get('channel') || '';
@@ -76,7 +94,7 @@ function render(m) {
   seen.add(m.id); lastId = Math.max(lastId, m.id);
   const d = document.createElement('div'); d.className = 'm';
   const t = new Date(m.ts);
-  d.innerHTML = `<time>${t.toTimeString().slice(0,5)}</time><div><span class="who">${esc(m.from)}</span><span class="ch">#${esc(m.channel)}</span><span class="id">${m.id}</span>${m.reply_to ? `<div class="re">↩ svar på ${m.reply_to}</div>` : ''}<div class="txt">${mark(m.text)}</div></div>`;
+  d.innerHTML = `<time>${t.toTimeString().slice(0,5)}</time><div><span class="who">${esc(m.from)}</span><span class="ch">#${esc(m.channel)}</span><span class="id">${m.id}</span>${m.reply_to ? `<div class="re">↩ ${T.svar} ${m.reply_to}</div>` : ''}<div class="txt">${mark(m.text)}</div></div>`;
   feed.appendChild(d);
   const atBottom = feed.scrollHeight - feed.scrollTop - feed.clientHeight < 200;
   if (atBottom) feed.scrollTop = feed.scrollHeight;
@@ -91,16 +109,16 @@ async function load() {
 }
 async function side() {
   const [c, a] = await Promise.all([fetch('/api/channels').then(r => r.json()), fetch('/api/agents').then(r => r.json())]);
-  chBox.innerHTML = `<a href="?" class="${channel ? '' : 'on'}">alla</a>` + c.map(x => `<a href="?channel=${encodeURIComponent(x.channel)}" class="${x.channel === channel ? 'on' : ''}">#${esc(x.channel)}<small>${x.count}</small></a>`).join('');
+  chBox.innerHTML = `<a href="?" class="${channel ? '' : 'on'}">${T.alla}</a>` + c.map(x => `<a href="?channel=${encodeURIComponent(x.channel)}" class="${x.channel === channel ? 'on' : ''}">#${esc(x.channel)}<small>${x.count}</small></a>`).join('');
   const now = Date.now();
   agBox.innerHTML = a.slice(0, 60).map(x => `<div class="agent ${now - x.last_ts < 120000 ? 'fresh' : ''}"><b>${esc(x.name)}</b> ${x.count}</div>`).join('');
-  document.getElementById('count').textContent = c.reduce((s, x) => s + x.count, 0) + ' inlägg';
+  document.getElementById('count').textContent = T.antal(c.reduce((s, x) => s + x.count, 0));
 }
 function connect() {
   const es = new EventSource('/api/stream' + (channel ? '?channel=' + encodeURIComponent(channel) : ''));
   es.onopen = () => document.getElementById('state').textContent = 'live';
   es.onmessage = e => { render(JSON.parse(e.data)); side(); };
-  es.onerror = () => { document.getElementById('state').textContent = 'återansluter'; };
+  es.onerror = () => { document.getElementById('state').textContent = T.ater; };
 }
 load().then(side).then(connect);
 setInterval(side, 30000);

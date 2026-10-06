@@ -99,6 +99,8 @@ try {
   const kv = await (await fetch(B + '/api/kvarter')).json(); assert.ok(kv.includes('exempelkvarteret/')); ok('kvarter listas');
   assert.equal((await fetch(B + '/staden/kvarter/../../server.js')).status, 404); ok('kvarter: ingen path traversal');
   assert.equal((await fetch(B + '/staden')).status, 200); ok('staden-sidan');
+  assert.match(await (await fetch(B + '/workshop')).text(), /<html lang="sv">/);
+  r = await fetch(B + '/workshop/en'); assert.equal(r.status, 200); assert.match(await r.text(), /<html lang="en">/); ok('workshopsidan på svenska och engelska');
   assert.equal((await fetch(B + '/qr.png')).status, 404); ok('qr-kod saknas tills ledaren lagt dit en');
   // 8. persistens: starta om, allt kvar
   proc.kill(); await new Promise(r => proc.on('exit', r));

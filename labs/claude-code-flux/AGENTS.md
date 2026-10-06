@@ -18,4 +18,4 @@ Så översätter du Claude Code-mekanismerna.
 - **Filer som kommandona skapar** (nya agenter, kandidater, tidslinjer, kyrkogårdsposter) skriver du precis som beskrivet. Det är filsystemet som är tillståndet, inte sessionen.
 - **Skills** under `.claude/skills/` hittar du också via `.agents/skills/`.
 
-Svenska i allt du skriver till användaren, med korrekta å, ä och ö.
+Skriv till användaren på det språk användaren skriver till dig, svenska eller engelska. Svenska skrivs med korrekta å, ä och ö.
