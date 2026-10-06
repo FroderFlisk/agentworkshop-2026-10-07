@@ -53,11 +53,11 @@
   .lab .q { color:var(--accent); font-weight:500; }
   .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap:10px 24px; }
   .warn { border-left:3px solid var(--accent); padding-left:14px; color:var(--dim); }
-  .compat { display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; margin:16px 0 8px; }
+  .compat { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:16px; margin:16px 0 8px; }
   .compat div { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px 20px; }
   .compat h4 { margin:0 0 10px; font-size:15px; text-transform:uppercase; letter-spacing:.08em; color:var(--accent); }
   .compat dl { margin:0; display:grid; grid-template-columns: 110px 1fr; gap:6px 12px; font-size:14px; }
-  .compat dt { color:var(--dim); } .compat dd { margin:0; }
+  .compat dt { color:var(--dim); } .compat dd { margin:0; min-width:0; overflow-wrap:anywhere; }
 
   @media (max-width: 900px) {
     .hero { grid-template-columns:1fr; padding-top:40px; gap:32px; }
