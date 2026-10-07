@@ -289,6 +289,7 @@ test('real plugin HTTP discovers sources and deduplicates actual events without 
   const plugins = join(directory, 'plugins');
   mkdirSync(plugins);
   cpSync(join(root, 'board/plugins/fralle'), join(plugins, 'fralle'), { recursive: true });
+  cpSync(join(root, 'board/plugins/surret'), join(plugins, 'surret'), { recursive: true });
   mkdirSync(join(plugins, 'report-fixture'));
   cpSync(join(__dirname, 'fixtures/report-provider.cjs'), join(plugins, 'report-fixture/index.js'));
   const child = spawn(process.execPath, ['-e', `
@@ -315,7 +316,18 @@ test('real plugin HTTP discovers sources and deduplicates actual events without 
     assert.equal(result.status, 201, await result.clone().text());
     return result.json();
   }
-  const question = await emit({ from: 'orat', typ: 'fråga.ny', nyttolast: { fråga: 'Testfråga', frågare: 'report-test' } });
+  const posted = await fetch(base + '/api/messages', { method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ from: 'report-test', channel: 'torget', text: '@kollegan Testfråga' }) });
+  assert.equal(posted.status, 201);
+  const message = await posted.json();
+  let question;
+  for (let attempt = 0; attempt < 30 && !question; attempt++) {
+    const events = await (await fetch(base + '/api/events?typ=fråga.ny')).json();
+    question = events.find(item => item.nyttolast?.inlägg === message.id);
+    if (!question) await new Promise(done => setTimeout(done, 20));
+  }
+  assert.ok(question, 'Örat ska skapa den verkliga frågeroten.');
   await emit({ from: 'rosten', typ: 'svar.klart', orsak: question.id, nyttolast: { fråga_id: question.id } });
   for (let attempt = 0; attempt < 30; attempt++) {
     const status = await (await fetch(base + '/t/fralle/status')).json();
@@ -333,6 +345,8 @@ test('real plugin HTTP discovers sources and deduplicates actual events without 
   assert.equal(report.summary.feedback.useful, null);
   assert.equal(report.summary.feedback.saved_minutes, null);
   assert.equal(report.summary.feedback.unclassified_feedback, 1);
+  assert.equal(report.sources.find(item => item.team === 'surret').mode, 'standard');
+  assert.deepEqual(report.summary.conflicts, []);
   assert.equal(report.sources.find(item => item.team === 'report-fixture').mode, 'standard');
   const invalid = await fetch(base + '/t/fralle/report?minutes=42');
   assert.equal(invalid.status, 400);
