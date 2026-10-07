@@ -572,7 +572,7 @@ test('status is read-only and unknown routes are not handled', () => {
   assert.equal(plugin.handle({ method: 'GET' }, {}, { ...context, path: '/unknown' }), false);
 });
 
-test('real server reacts on bus, serves frontend and persists queue over restart', { timeout: 20000 }, async t => {
+test('real HTTP queue reserves fair turns, tracks lifecycle and persists cancellation over restart', { timeout: 20000 }, async t => {
   const root = resolve(__dirname, '../../..');
   const directory = mkdtempSync(join(tmpdir(), 'fralle-integration-'));
   const plugins = join(directory, 'plugins');

@@ -107,25 +107,26 @@ test('open question details stay open across automatic refreshes', async () => {
     kö: [{ id: 100, köplats: 1, prioritet: 50, ts: Date.now(), fråga: 'Fråga', frågare: 'Anna' }],
   });
 
-  test('requester filtering uses the same case-insensitive NFC grouping as the queue', async () => {
-    const state = data({
-      kö: ['Åsa', 'ÅSA', 'A\u030asa'].map((name, index) => ({
-        id: 100 + index, köplats: index + 1, prioritet: 50,
-        ts: Date.now(), fråga: 'Fråga', frågare: name,
-      })),
-    });
-    const { ids } = await run(async () => ({ ok: true, json: async () => state }));
-    assert.equal(ids['requester-filter'].children.length, 2);
-    ids['requester-filter'].value = 'åsa';
-    ids['requester-filter'].listeners.change();
-    assert.equal(ids.questions.children.length, 3);
-  });
   const { ids, timers } = await run(async () => ({ ok: true, json: async () => state }));
   ids.questions.children[0].open = true;
   ids.questions.children[0].listeners.toggle();
   state.kö[0].väntetid_sek++;
   await timers[0].callback();
   assert.equal(ids.questions.children[0].open, true);
+});
+
+test('requester filtering uses the same case-insensitive NFC grouping as the queue', async () => {
+  const state = data({
+    kö: ['Åsa', 'ÅSA', 'A\u030asa'].map((name, index) => ({
+      id: 100 + index, köplats: index + 1, prioritet: 50,
+      ts: Date.now(), fråga: 'Fråga', frågare: name,
+    })),
+  });
+  const { ids } = await run(async () => ({ ok: true, json: async () => state }));
+  assert.equal(ids['requester-filter'].children.length, 2);
+  ids['requester-filter'].value = 'åsa';
+  ids['requester-filter'].listeners.change();
+  assert.equal(ids.questions.children.length, 3);
 });
 
 test('retry schedule, reservation and cancellation history are visible', async () => {
