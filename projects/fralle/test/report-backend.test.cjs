@@ -291,6 +291,7 @@ test('real plugin HTTP discovers sources and deduplicates actual events without 
   mkdirSync(plugins);
   cpSync(join(root, 'board/plugins/fralle'), join(plugins, 'fralle'), { recursive: true });
   cpSync(join(root, 'board/plugins/surret'), join(plugins, 'surret'), { recursive: true });
+  cpSync(join(root, 'board/plugins/marcuslind'), join(plugins, 'marcuslind'), { recursive: true });
   mkdirSync(join(plugins, 'report-fixture'));
   cpSync(join(__dirname, 'fixtures/report-provider.cjs'), join(plugins, 'report-fixture/index.js'));
   const child = spawn(process.execPath, ['-e', `
@@ -347,6 +348,17 @@ test('real plugin HTTP discovers sources and deduplicates actual events without 
   assert.equal(report.summary.feedback.saved_minutes, null);
   assert.equal(report.summary.feedback.unclassified_feedback, 1);
   assert.equal(report.sources.find(item => item.team === 'surret').mode, 'standard');
+  const meeting = report.sources.find(item => item.team === 'marcuslind');
+  const meetingData = await (await fetch(base + meeting.url)).json();
+  const coverage = meetingData.coverage;
+  if (coverage.complete && (coverage.from === null || coverage.to === null ||
+    coverage.from > report.period.from || coverage.to < report.period.to)) {
+    assert.equal(meeting.mode, 'error', JSON.stringify(meeting));
+    assert.match(meeting.error, /Fullständig täckning/);
+    t.diagnostic('Mötets ofullständiga täckningskontrakt redovisas som källfel: ' + JSON.stringify(coverage));
+  } else {
+    assert.equal(meeting.mode, 'standard', JSON.stringify(meeting));
+  }
   assert.deepEqual(report.summary.conflicts, []);
   assert.equal(report.sources.find(item => item.team === 'report-fixture').mode, 'standard');
   const invalid = await fetch(base + '/t/fralle/report?minutes=42');
