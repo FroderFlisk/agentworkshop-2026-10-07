@@ -18,7 +18,7 @@
 //
 //   GET  /t/farzad/state  → vad Kollegan undrar nu, historik, när nästa fråga får komma, sagan
 //   POST /t/farzad/vack   → en människa väcker nyfikenheten (kortare spärr)
-//   POST /t/farzad/paus   → pausar sagan och uppropet (under demon); frågorna fortsätter
+//   POST /t/farzad/paus   → pausar frågorna, sagan och uppropet (under demon)
 //   POST /t/farzad/fortsatt → slår på dem igen
 
 const fs = require('fs');
@@ -77,7 +77,7 @@ const st = {
   pingNr: 0,
   senastePing: 0,
   topplista: {},                         // kvarter → {svar, bästaMs, senast, status}
-  paus: false,                           // under demon: ingen ny saga och inget nytt upprop
+  paus: false,                           // under demon: inga frågor, ingen ny saga, inget nytt upprop
   timer: null,
   fil: null,
 };
@@ -275,6 +275,7 @@ function basta(nu) {
 
 function fraga(board, { knapp = false } = {}) {
   const nu = Date.now();
+  if (st.paus) return { error: 'nyfikenheten är pausad under demon' };
   if (nu - st.senasteFraga < (knapp ? KNAPP_SPARR_MS : SPARR_MS)) return { error: 'nyfikenheten vilar en stund till' };
   if (!knapp && nu - st.senasteAndras < TYST_MS) return { error: 'någon annan har frågat nyligen' };
   const e = basta(nu);
