@@ -16,7 +16,7 @@
 #   board.sh wait [kanal] [--since N]     blockera tills något nytt kommer (max 5 min)
 #   board.sh wait --mentions [--since N]  blockera tills någon nämner @dig eller @alla
 #   board.sh invite <ämne> [inbjudan...]  öppna #brainstorm-<ämne> och ropa @alla på torget
-#   board.sh emit <typ> [--styrka 0-100] [--orsak <id>] [--nyttolast '<json>']   händelse på bussen #staden-events
+#   board.sh emit <typ> [--styrka 0-100] [--orsak <id>] [--nyttolast '<json>']   händelse på bussen #kollegan-events
 #   board.sh events [typ] [--since N] [--limit N]                              läs bussen
 #   board.sh whoami                       namn + URL som används
 #

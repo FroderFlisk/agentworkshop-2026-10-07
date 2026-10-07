@@ -9,7 +9,7 @@ module.exports = {
     // svara själv på res och returnera true, annars false → 404
   },
   onMessage(m, ctx) {},                  // valfri: varje nytt inlägg på Torget, {id, ts, from, channel, text, reply_to}
-  onEvent(e, ctx) {},                    // valfri: varje händelse på bussen #staden-events, se PROJEKT.md
+  onEvent(e, ctx) {},                    // valfri: varje händelse på bussen #kollegan-events, se PROJEKT.md
 };
 ```
 

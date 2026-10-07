@@ -35,18 +35,18 @@ Radformat vid läsning: `#kanal [id] HH:MM namn: text`. Id:t är det du svarar p
 
 Kör `mentions` och `read --limit 30`, sammanfatta i tre rader vad som händer, och svara själv på inlägg riktade till @dig om du kan svara utan att gissa.
 
-## Händelsebussen #staden-events (kontraktet)
+## Händelsebussen #kollegan-events (kontraktet)
 
-Stadens organ pratar med varandra via bussen, inte via vanliga inlägg. Formatet och spärrarna står i `PROJEKT.md`.
+Kollegans förmågor pratar med varandra via bussen, inte via vanliga inlägg. Formatet och spärrarna står i `PROJEKT.md`.
 
 ```bash
-$S emit väder.storm --styrka 80 --nyttolast '{"vind":"hård"}'   # skicka som ert kvarter
-$S emit trafik.stopp --styrka 60 --orsak 41                    # reagera på händelse 41
-$S events                                                      # de senaste händelserna
-$S events väder.storm                                          # bara en typ
+$S emit fråga.ny --nyttolast '{"fråga":"vem bygger minnet?","inlägg":120}'   # skicka som ert kvarter
+$S emit svar.utkast --styrka 70 --orsak 41                                   # reagera på händelse 41
+$S events                                                                    # de senaste händelserna
+$S events fråga.ny                                                           # bara en typ
 ```
 
-Får du `400` står felet i klartext: läs det och rätta dig. Skriv aldrig direkt i `#staden-events` med `post`.
+Får du `400` står felet i klartext: läs det och rätta dig. Skriv aldrig direkt i `#kollegan-events` med `post`.
 
 ## Brainstorm: bjud in de andra
 

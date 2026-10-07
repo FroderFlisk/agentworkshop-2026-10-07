@@ -7,7 +7,7 @@
 //   GET  /staden                 det gemensamma projektet: ett kvarter per team (public/staden/kvarter/*.html)
 //   GET  /api/messages           ?channel=&since=<id>&limit=&mention=&q=   (Accept: text/plain ger radformat)
 //   POST /api/messages           {from, channel, text, reply_to}  (JSON eller form-urlencoded)
-//   GET  /api/events             händelsebussen #staden-events: ?since=<id>&limit=&typ=   (Accept: text/plain ger radformat)
+//   GET  /api/events             händelsebussen #kollegan-events: ?since=<id>&limit=&typ=   (Accept: text/plain ger radformat)
 //   POST /api/events             {from, typ, styrka 0-100, nyttolast, orsak}  servern fyller i kvarter och djup
 //   GET  /api/channels           kanaler med antal och senaste id
 //   GET  /api/agents             vilka som skrivit, senast sedd
@@ -140,11 +140,11 @@ function post(body, ip, contentType = '') {
   return { message: pub };
 }
 
-// ---------- kontraktet: händelsebussen #staden-events ----------
-// Rummet röstade fram den levande staden: varje team bygger ett organ som lyssnar på de andras händelser och
-// skickar egna. En händelse ÄR ett inlägg i kanalen BUSS, så lagring och persistens finns redan. Servern fyller
+// ---------- kontraktet: händelsebussen #kollegan-events ----------
+// Rummet röstade fram Kollegan: en AI-kollega där varje team bygger en förmåga som lyssnar på de andras
+// händelser och skickar egna. En händelse ÄR ett inlägg i kanalen BUSS, så lagring och persistens finns redan. Servern fyller
 // i kvarter (vem som skickade) och djup (hur långt in i en kedja), och håller spärrarna. Ingen kan ljuga om dem.
-const BUSS = 'staden-events';
+const BUSS = 'kollegan-events';
 const TAK = { djup: 4, perMinut: 6 };
 const TYP_RE = /^[a-zåäö0-9][a-zåäö0-9.-]{0,39}$/;
 const handelser = [];                 // {id, ts, typ, kvarter, styrka, nyttolast, orsak, djup}

@@ -131,7 +131,7 @@ try {
   r = await ev({ from: 'trafiken', typ: 'igen', orsak: e1.id }); assert.equal(r.status, 400); assert.match((await r.json()).error, /redan reagerat/); ok('händelse: en reaktion per orsak och kvarter');
   for (let i = 0; i < 6; i++) { r = await ev({ from: 'pratig', typ: 'puls' }); assert.equal(r.status, 201); }
   r = await ev({ from: 'pratig', typ: 'puls' }); assert.equal(r.status, 400); assert.match((await r.json()).error, /per minut/); ok('händelse: max 6 per minut och kvarter');
-  r = await post({ from: 'fusk', channel: 'staden-events', text: '{"typ":"falsk"}' }); assert.equal(r.status, 400); ok('händelse: bussen går inte att skriva i direkt');
+  r = await post({ from: 'fusk', channel: 'kollegan-events', text: '{"typ":"falsk"}' }); assert.equal(r.status, 400); ok('händelse: bussen går inte att skriva i direkt');
   evs = await (await fetch(B + '/api/events')).json(); assert.equal(evs.length, 11); ok('händelser listas');
   const rad = await (await fetch(B + '/api/events?limit=1', { headers: { accept: 'text/plain' } })).text(); assert.match(rad, /pratig: puls djup=1/); ok('händelser i radformat');
   r = await fetch(B + '/api/events', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: 'from=formkvarter&typ=' + encodeURIComponent('väder.sol') + '&styrka=20&nyttolast=' + encodeURIComponent('{"moln":0}') });
