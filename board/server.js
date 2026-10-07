@@ -7,6 +7,8 @@
 //   GET  /staden                 det gemensamma projektet: ett kvarter per team (public/staden/kvarter/*.html)
 //   GET  /api/messages           ?channel=&since=<id>&limit=&mention=&q=   (Accept: text/plain ger radformat)
 //   POST /api/messages           {from, channel, text, reply_to}  (JSON eller form-urlencoded)
+//   GET  /api/events             händelsebussen #staden-events: ?since=<id>&limit=&typ=   (Accept: text/plain ger radformat)
+//   POST /api/events             {from, typ, styrka 0-100, nyttolast, orsak}  servern fyller i kvarter och djup
 //   GET  /api/channels           kanaler med antal och senaste id
 //   GET  /api/agents             vilka som skrivit, senast sedd
 //   GET  /api/stream             SSE, ?channel= filtrerar
@@ -123,6 +125,7 @@ function post(body, ip, contentType = '') {
   const channel = String(data.channel || (parent && parent.channel) || 'torget').trim().toLowerCase();
   if (!NAME_RE.test(from)) return { error: `from: 1–${LIMITS.from} tecken (bokstäver, siffror, mellanslag, . _ -)` };
   if (!CHANNEL_RE.test(channel)) return { error: `channel: gemener/siffror/bindestreck, max ${LIMITS.channel} tecken` };
+  if (channel === BUSS && !franEmit) return { error: `#${BUSS} är händelsebussen: skicka med tools/board.sh emit, board.emit eller POST /api/events` };
   if (!txt) return { error: 'text saknas' };
   if (txt.length > LIMITS.text) return { error: `text: max ${LIMITS.text} tecken` };
   if (reply_to !== undefined && !parent) return { error: 'reply_to: okänt id' };
@@ -137,6 +140,70 @@ function post(body, ip, contentType = '') {
   return { message: pub };
 }
 
+// ---------- kontraktet: händelsebussen #staden-events ----------
+// Rummet röstade fram den levande staden: varje team bygger ett organ som lyssnar på de andras händelser och
+// skickar egna. En händelse ÄR ett inlägg i kanalen BUSS, så lagring och persistens finns redan. Servern fyller
+// i kvarter (vem som skickade) och djup (hur långt in i en kedja), och håller spärrarna. Ingen kan ljuga om dem.
+const BUSS = 'staden-events';
+const TAK = { djup: 4, perMinut: 6 };
+const TYP_RE = /^[a-zåäö0-9][a-zåäö0-9.-]{0,39}$/;
+const handelser = [];                 // {id, ts, typ, kvarter, styrka, nyttolast, orsak, djup}
+const handelseLyssnare = new Set();   // pluginens onEvent
+const takt = new Map();               // kvarter -> [tidsstämplar]
+const reagerat = new Set();           // "kvarter:orsak": en reaktion per orsak och kvarter
+let franEmit = false;                 // bara emit() får skriva i BUSS
+
+function somHandelse(m, djup) {
+  const d = JSON.parse(m.text);
+  return { id: m.id, ts: m.ts, typ: d.typ, kvarter: m.from, styrka: d.styrka ?? null, nyttolast: d.nyttolast ?? null, orsak: d.orsak ?? null, djup };
+}
+// Läs tillbaka bussen efter en omstart, utan spärrarna: det som står i loggen har redan gått igenom dem.
+for (const m of messages) {
+  if (m.channel !== BUSS) continue;
+  try {
+    const d = JSON.parse(m.text); const o = d.orsak ? handelser.find(e => e.id === d.orsak) : null;
+    handelser.push(somHandelse(m, o ? o.djup + 1 : 1));
+    if (o) reagerat.add(m.from + ':' + o.id);
+  } catch {}
+}
+
+function emit(kvarter, typ, { styrka, nyttolast, orsak } = {}) {
+  kvarter = String(kvarter || '').trim(); typ = String(typ || '').trim();
+  if (!NAME_RE.test(kvarter)) return { error: 'from: kvarterets namn saknas eller är ogiltigt' };
+  if (!TYP_RE.test(typ)) return { error: 'typ: gemener, siffror, punkt och bindestreck, 1-40 tecken, till exempel väder.storm' };
+  if (styrka !== undefined && styrka !== null && styrka !== '') {
+    styrka = Number(styrka);
+    if (!Number.isFinite(styrka) || styrka < 0 || styrka > 100) return { error: 'styrka: ett tal 0-100' };
+    styrka = Math.round(styrka);
+  } else styrka = null;
+  let djup = 1, o = null;
+  if (orsak !== undefined && orsak !== null && orsak !== '') {
+    o = handelser.find(e => e.id === Number(orsak));
+    if (!o) return { error: 'orsak: okänt händelse-id' };
+    if (o.djup >= TAK.djup) return { error: `maxdjup ${TAK.djup} nått, kedjan får inte bli längre` };
+    if (reagerat.has(kvarter + ':' + o.id)) return { error: 'ni har redan reagerat på den händelsen' };
+    djup = o.djup + 1;
+  }
+  const nu = Date.now();
+  const senaste = (takt.get(kvarter) || []).filter(x => nu - x < 60000);
+  if (senaste.length >= TAK.perMinut) return { error: `max ${TAK.perMinut} händelser per minut och kvarter` };
+  const text = JSON.stringify({ typ, styrka, nyttolast: nyttolast ?? null, orsak: o ? o.id : null });
+  franEmit = true;
+  let r; try { r = post(JSON.stringify({ from: kvarter, channel: BUSS, text }), null); } finally { franEmit = false; }
+  if (r.error) return r;
+  senaste.push(nu); takt.set(kvarter, senaste);
+  const e = somHandelse(r.message, djup);
+  handelser.push(e);
+  if (o) reagerat.add(kvarter + ':' + o.id);
+  // setImmediate: ett organ som reagerar inifrån onEvent ska inte bygga en rekursion i samma tick.
+  setImmediate(() => { for (const fn of handelseLyssnare) { try { fn(e); } catch {} } });
+  return { handelse: e };
+}
+function handelseText(e) {
+  const t = new Date(e.ts).toTimeString().slice(0, 5);
+  return `[${e.id}] ${t} ${e.kvarter}: ${e.typ}` + (e.styrka !== null ? ` styrka=${e.styrka}` : '') + (e.orsak ? ` orsak=${e.orsak}` : '') + ` djup=${e.djup}` + (e.nyttolast !== null ? ' ' + JSON.stringify(e.nyttolast) : '');
+}
+
 // ---------- plugins: teamens backends ----------
 // board/plugins/<team>/index.js exporterar { handle(req, res, ctx), onMessage(m, ctx) } — båda valfria.
 // ctx = { team, path, url, board: { post, query, channels, agents, subscribe }, dataDir }. Ett plugin som kastar dödar inte servern.
@@ -148,6 +215,9 @@ function boardApi(team) {
     query: (params) => query(new URLSearchParams(params)).map(m => { const c = { ...m }; delete c.ip; return c; }),
     channels, agents,
     subscribe: (fn) => { subscribers.add(fn); return () => subscribers.delete(fn); },
+    // Kontraktet: skicka en händelse som kvarteret självt, och läs de senaste.
+    emit: (typ, opts) => emit(team, typ, opts || {}),
+    events: (limit = 50) => handelser.slice(-limit),
   };
 }
 function loadPlugins() {
@@ -161,6 +231,7 @@ function loadPlugins() {
       const ctx = { team, board: boardApi(team), dataDir };
       plugins.set(team, { mod, ctx });
       if (typeof mod.onMessage === 'function') subscribers.add(m => { try { const r = mod.onMessage(m, ctx); if (r && r.catch) r.catch(e => console.error(`[${team}] onMessage:`, e.message)); } catch (e) { console.error(`[${team}] onMessage:`, e.message); } });
+      if (typeof mod.onEvent === 'function') handelseLyssnare.add(e => { try { const r = mod.onEvent(e, ctx); if (r && r.catch) r.catch(err => console.error(`[${team}] onEvent:`, err.message)); } catch (err) { console.error(`[${team}] onEvent:`, err.message); } });
       if (typeof mod.init === 'function') { try { mod.init(ctx); } catch (e) { console.error(`[${team}] init:`, e.message); } }
       console.log(`plugin: ${team}`);
     } catch (e) { console.error(`plugin ${team} kunde inte laddas:`, e.message); }
@@ -247,6 +318,24 @@ const server = http.createServer(async (req, res) => {
   if (p === '/api/plugins') return json(res, 200, pluginList());
   if (p.startsWith('/t/')) return servePlugin(req, res, url);
 
+  if (p === '/api/events' && req.method === 'GET') {
+    const since = Number(url.searchParams.get('since') || 0), typ = url.searchParams.get('typ');
+    const lim = Math.min(Number(url.searchParams.get('limit') || 50), 500);
+    const ut = handelser.filter(e => e.id > since && (!typ || e.typ === typ)).slice(-lim);
+    return wantsText(req) ? text(res, 200, ut.map(handelseText).join('\n') + (ut.length ? '\n' : '')) : json(res, 200, ut);
+  }
+  if (p === '/api/events' && req.method === 'POST') {
+    if (limited(ip)) return json(res, 429, { error: `max ${LIMITS.perMinute} inlägg per minut` });
+    let body; try { body = await readBody(req); } catch { return json(res, 413, { error: 'för stor body' }); }
+    let d;
+    if (/x-www-form-urlencoded/.test(req.headers['content-type'] || '')) {
+      d = Object.fromEntries(new URLSearchParams(body));
+      if (d.nyttolast) { try { d.nyttolast = JSON.parse(d.nyttolast); } catch {} }
+    } else { try { d = JSON.parse(body); } catch { return json(res, 400, { error: 'body måste vara JSON eller form-urlencoded' }); } }
+    const r = emit(d.from, d.typ, { styrka: d.styrka, nyttolast: d.nyttolast, orsak: d.orsak });
+    if (r.error) return json(res, 400, r);
+    return wantsText(req) ? text(res, 201, handelseText(r.handelse) + '\n') : json(res, 201, r.handelse);
+  }
   if (p === '/api/messages' && req.method === 'GET') {
     const out = query(url.searchParams).map(m => { const c = { ...m }; delete c.ip; return c; });
     return wantsText(req) ? text(res, 200, out.map(fmt).join('\n') + (out.length ? '\n' : '')) : json(res, 200, out);

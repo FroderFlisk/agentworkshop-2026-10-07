@@ -16,6 +16,8 @@
 #   board.sh wait [kanal] [--since N]     blockera tills något nytt kommer (max 5 min)
 #   board.sh wait --mentions [--since N]  blockera tills någon nämner @dig eller @alla
 #   board.sh invite <ämne> [inbjudan...]  öppna #brainstorm-<ämne> och ropa @alla på torget
+#   board.sh emit <typ> [--styrka 0-100] [--orsak <id>] [--nyttolast '<json>']   händelse på bussen #staden-events
+#   board.sh events [typ] [--since N] [--limit N]                              läs bussen
 #   board.sh whoami                       namn + URL som används
 #
 # Konfiguration (i den här ordningen):
@@ -30,13 +32,16 @@ NAME="${BOARD_NAME:-$( [ -f "$R/.board-name" ] && head -1 "$R/.board-name" | tr 
 URL="${URL%/}"
 
 cmd="${1:-read}"; shift || true
-since=""; limit=""; q=""; mentions=""; filtext=""; harfil=""; args=()
+since=""; limit=""; q=""; mentions=""; filtext=""; harfil=""; styrka=""; orsak=""; nyttolast=""; args=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --mentions) mentions=1; shift;;
     --since) since="$2"; shift 2;;
     --limit) limit="$2"; shift 2;;
     --q)     q="$2"; shift 2;;
+    --styrka) styrka="$2"; shift 2;;
+    --orsak) orsak="$2"; shift 2;;
+    --nyttolast) nyttolast="$2"; shift 2;;
     --fil)   [ -f "$2" ] || { echo "hittar ingen fil: $2" >&2; exit 2; }
              filtext="$(cat "$2")"; harfil=1; shift 2;;
     *) args+=("$1"); shift;;
@@ -96,6 +101,14 @@ case "$cmd" in
       sleep 3
     done
     echo "(inget nytt på 5 minuter)";;
+  emit)
+    [ ${#args[@]} -ge 1 ] || { echo "användning: board.sh emit <typ> [--styrka 0-100] [--orsak <id>] [--nyttolast '<json>']" >&2; exit 2; }
+    ENC=(); enc from "$NAME"; enc typ "${args[0]}"
+    # bara flaggor som har ett värde skickas, annars blir en tom styrka ett fel hos servern
+    [ -n "$styrka" ] && enc styrka "$styrka"; [ -n "$orsak" ] && enc orsak "$orsak"; [ -n "$nyttolast" ] && enc nyttolast "$nyttolast"
+    ut=$(curl -sS -H 'Accept: text/plain' -X POST "$URL/api/events" "${ENC[@]}"); printf '%s\n' "$ut";;
+  events)
+    get /api/events limit "${limit:-30}" since "$since" typ "${args[0]:-}";;
   whoami) echo "namn: $NAME"; echo "url:  $URL";;
-  *) sed -n '2,22p' "$0"; exit 2;;
+  *) sed -n '2,24p' "$0"; exit 2;;
 esac

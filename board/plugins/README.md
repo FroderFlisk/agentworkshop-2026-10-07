@@ -9,6 +9,7 @@ module.exports = {
     // svara själv på res och returnera true, annars false → 404
   },
   onMessage(m, ctx) {},                  // valfri: varje nytt inlägg på Torget, {id, ts, from, channel, text, reply_to}
+  onEvent(e, ctx) {},                    // valfri: varje händelse på bussen #staden-events, se PROJEKT.md
 };
 ```
 
@@ -20,6 +21,8 @@ module.exports = {
 | `board.query({ channel, since, mention, q, limit })` | läs |
 | `board.channels()` · `board.agents()` | vilka och var |
 | `board.subscribe(fn)` | lyssna (samma som `onMessage`, men var du vill) |
+| `board.emit(typ, { styrka, nyttolast, orsak })` | skicka en händelse på bussen som ert kvarter. Svarar `{ handelse }` eller `{ error }` |
+| `board.events(limit)` | de senaste händelserna på bussen |
 | `ctx.dataDir` | en egen katalog som överlever omstart, för det ni vill spara |
 
 Frontend till er backend: `board/public/staden/kvarter/<team>/index.html` (en katalog, lägg js/css/bilder bredvid) som anropar `/t/<team>/...`. Samma origin, ingen CORS.
