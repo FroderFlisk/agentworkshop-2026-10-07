@@ -77,6 +77,13 @@ frågarnamn och 100 totalt** tillåts; även påbörjade frågor räknas.
 befintliga frågor. Migration kan behålla fler äldre frågor per namn;
 gränsen styr intag av nya frågor.
 
+Frågarens namn kommer från Örats `nyttolast.frågare`, annars originalets
+`inlägg` bland senaste 500 inläggen. Saknas båda grupperas frågan i en
+gemensam ”okänd frågare”-kö. Namn jämförs skiftlägesokänsligt men å, ä och
+ö bevaras. Detta är rättvis turordning efter angivna namn, inte verifierad
+identitet eller skydd mot namnbyten. Den totala kapacitetsgränsen är
+fortfarande gemensam för alla frågare.
+
 Mottagare kommer från de senaste 500 inläggen i `#bygge`, där teamet
 självt inleder med exempelvis ”Team fralle tar förmågan Kön” eller
 ”Vi tar förmågan Minnet”. Anmälan får också inleda en senare mening,
